@@ -19,7 +19,6 @@ def dump_dir_recursive(filename: str) -> None:
             global_path_list.append({
                 "is_dir": False,
                 "path": os.path.join(filename, sub_dir),
-                "filename": sub_dir,
                 "suffix": sub_dir.split(".")[-1] if "." in sub_dir else None
              })
              
@@ -28,20 +27,21 @@ def dump_dir_recursive(filename: str) -> None:
             global_path_list.append({
                 "is_dir": True,
                 "path": os.path.join(filename, sub_dir),
-                "filename": sub_dir,
                 "suffix": None  
             })
             dump_dir_recursive(os.path.join(filename, sub_dir))
             
             
-def refactor_filename(filename: str) -> str:
-    # filename = filename.replace(INPUT_DIR, "") # remove input directory from filename
+def extract_formatted_filepath(path: str) -> str:
+    # remove input and output directory names from the path
+    path = path.replace(INPUT_DIR, "")
+    path = path.replace(OUTPUT_DIR, "")
     
-    filename = re.sub(r'-', '_', filename) # replace dashes with underscores
-    filename = re.sub(r' ', '_', filename) # remove spaces
-    filename = re.sub(r'_+', '_', filename) # remove multiple underscores
-    filename = filename.lower() # convert to lowercase
-    return filename
+    path = re.sub(r'-', '_', path) # replace dashes with underscores
+    path = re.sub(r' ', '_', path) # remove spaces
+    path = re.sub(r'_+', '_', path) # remove multiple underscores
+    path = path.lower() # convert to lowercase
+    return path
 
 
 def main():
@@ -51,20 +51,18 @@ def main():
     # create all subdirectories
     for entry in global_path_list:
         if entry["is_dir"]:
-            print(refactor_filename(entry["filename"]))
-            # new_path = os.path.join(OUTPUT_DIR, refactor_path_name(entry["path"]))
-            # os.makedirs(new_path, exist_ok=True)
+            new_path = OUTPUT_DIR + extract_formatted_filepath(entry["path"])
+            os.makedirs(new_path, exist_ok=True)
             
-    # # copy all files to the new directory structure
-    # for entry in global_path_list:    
-    #     if not entry["is_dir"]:
-    #         if not entry["suffix"] in SUFFIX_WHITELIST:
-    #             continue
-    #         new_path = os.path.join(OUTPUT_DIR, refactor_path_name(entry["path"]))
-    #         print(new_path)
-    #         shutil.copy2(entry["path"], new_path)
+    # copy all files to the new directory structure
+    for entry in global_path_list:    
+        if not entry["is_dir"]:
+            if not entry["suffix"] in SUFFIX_WHITELIST:
+                continue
+            new_path = OUTPUT_DIR + extract_formatted_filepath(entry["path"])
+            shutil.copy2(entry["path"], new_path)
             
-
+            
 if __name__ == "__main__":
     # parse command line arguments
     parser = argparse.ArgumentParser()
